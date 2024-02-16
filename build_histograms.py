@@ -21,6 +21,7 @@ plt.xlim([0,256])
 plt.show()
 
 
+# have to do 4 total comparaison of a person box with box, etc...
 # image 1 test boxes
 # person 1: 232,128,70,269
 # person 1 upper half: 232, 128, 70, 135
