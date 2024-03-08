@@ -112,17 +112,17 @@ def compose_dataset_histograms(labels_filepath: str):
 
 def compare_reference_dataset(reference_histograms, dataset_histograms):
     output_file = open('output_file.txt', 'a')
-    
+
     for ref_bbox, ref_d in reference_histograms.items():
         for ref_mask, ref_hist in ref_d.items():
             for img_name, dataset_d in dataset_histograms.items():
-                output_file.write('==> Comparing to IMG ' + img_name + '.png\n')
+                output_file.write('==> Comparing to IMG ' + img_name + '.png\n\n')
                 for dataset_bbox, dataset_d2 in dataset_d.items():
                     for dataset_mask, dataset_hist in dataset_d2.items():
                         correlation = calculate_correlation(ref_hist, dataset_hist)
 
                         output_file.write(
-                            f"==> Comparing ref_hist from ref_bbox/ref_mask: {ref_bbox}/{ref_mask} with ds_hist from ds_bbox/ds_mask:{dataset_bbox}/{dataset_mask} => {correlation:.4f}"  + "\n"
+                            f"Comparing ref_hist from ref_bbox/ref_mask: {ref_bbox}/{ref_mask} with ds_hist from ds_bbox/ds_mask:{dataset_bbox}/{dataset_mask} => {correlation:.4f}"  + "\n"
                         )
 
 if __name__ == '__main__':
