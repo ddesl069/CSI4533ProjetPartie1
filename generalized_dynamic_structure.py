@@ -10,12 +10,13 @@ type Histogram = list[list[float]]
 type BoundingBox = tuple[int, int, int, int]
 
 bboxes_person_img1: dict[BoundingBox, str] = {
-    (232,128,70,269): 'girl in black vest',
-    (333, 128, 84, 256): 'girl in brown vest',
-    (382, 271, 146, 76): 'blue hat man',
-    (332, 75, 31, 37): 'man in back right',
-    (258, 75, 31, 32): 'man in back left',
+    (232,128,70,269): 'girl in black vest 1',
+    (333,136,85,219): 'girl in brown vest 1',
+    (375,271,156,188): 'blue hat man',
+    (321,269,123,189): 'girl in black vest 2',
+    (463,251,112,206): 'girl in brown vest 2',
 }
+#1636738315284889400,331,73,31,39
 
 def calculate_histogram(img: MatLike, bbox: BoundingBox, mask_type: str) -> Histogram:
     mask = np.zeros(img.shape[:2], np.uint8)
@@ -110,45 +111,21 @@ def compose_dataset_histograms(labels_filepath: str):
     return dataset_histograms
 
 def compare_reference_dataset(reference_histograms, dataset_histograms):
-    # reference_histograms = rh
-
-    # dataset_histograms: Dict[
-    #     str: Dict[
-    #         Tuple[int,int,int,int], 
-    #         Dict[str, Histogram]
-    #     ]
-    # ] = compose_dataset_histograms('labels.txt')
     output_file = open('output_file.txt', 'a')
-    count = 0
+    
     for ref_bbox, ref_d in reference_histograms.items():
         for ref_mask, ref_hist in ref_d.items():
             for img_name, dataset_d in dataset_histograms.items():
-                print('IMG ' + img_name)
+                output_file.write('==> Comparing to IMG ' + img_name + '.png\n')
                 for dataset_bbox, dataset_d2 in dataset_d.items():
                     for dataset_mask, dataset_hist in dataset_d2.items():
                         correlation = calculate_correlation(ref_hist, dataset_hist)
-                        count += 1
 
-                        s = f"Comparing ref_hist from ref_bbox/ref_mask: {ref_bbox}/{ref_mask} with ds_hist from ds_bbox/ds_mask:{dataset_bbox}/{dataset_mask} => {correlation:.4f}"
-                        output_file.write(s)
-
-    print(count)
-    # for img_name, d in dataset_histograms.items():
-    #     print('IMAGE ' + img_name)
-    #     for bbox, d2 in d.items():
-    #         print('bbox in dataset: ' + bbox)
-    #         for h in d2.values():
-    #             for h2 in [reference_histograms.keys()]:
-                    
-    #                 correlation = calculate_correlation(h, h2)
-    #                 print(f"Comparison ({i1}, {i2}, '{mask1}-{mask2}') has correlation: {correlation:.4f}")()
-
-    # for (), () in itertools.product(reference_histograms):
-
+                        output_file.write(
+                            f"==> Comparing ref_hist from ref_bbox/ref_mask: {ref_bbox}/{ref_mask} with ds_hist from ds_bbox/ds_mask:{dataset_bbox}/{dataset_mask} => {correlation:.4f}"  + "\n"
+                        )
 
 if __name__ == '__main__':
     ref_histograms = create_reference_histograms()
     dataset_histograms = compose_dataset_histograms('labels.txt')
     compare_reference_dataset(ref_histograms, dataset_histograms)
-
-# print(compose_dataset_histograms('labels.txt').get("1636738303879021100"))
