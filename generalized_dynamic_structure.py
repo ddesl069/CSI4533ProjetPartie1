@@ -43,8 +43,6 @@ def create_reference_histograms():
     Those histograms will then be compared to other histograms in the dataset
     to find matches.
     """
-    # Take all 5 reference people from img1, because 
-    # all people of interest appear there
     img1 = cv.imread('./image_test/1636738315284889400.png', cv.IMREAD_GRAYSCALE)
     assert img1 is not None, "file could not be read, check with os.path.exists()"
 
