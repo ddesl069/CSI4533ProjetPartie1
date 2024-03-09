@@ -4,6 +4,7 @@ from matplotlib import pyplot as plt
 from cv2.typing import MatLike
 from typing import Tuple, Dict
 
+# typing for readability
 type Histogram = list[list[float]]
 # (x, y, w, h) - (x,y) is the top left point
 type BoundingBox = tuple[int, int, int, int]
@@ -39,24 +40,18 @@ def create_reference_histograms():
     Those histograms will then be compared to other histograms in the dataset
     to find matches.
     """
+    # Take all 5 reference people from img1, because 
+    # all people of interest appear there
     img1 = cv.imread('./image_test/1636738315284889400.png', cv.IMREAD_GRAYSCALE)
     assert img1 is not None, "file could not be read, check with os.path.exists()"
 
-    """
-    Description of the structure of reference_histograms:
-        {
-            (x,y,w,h): {
-                full: histogram, 
-                half: histogram
-            }, 
-            //, 
-            ...
-        } ==> 2 histograms * 5 people => 10
-    """
+    # Structure that stores histograms of our 5 people plus
+    # relevant data to them (tuples=>bounding boxes, str=>mask, full or half mask)
     reference_histograms: Dict[
         Tuple[int,int,int,int], 
         Dict[str, Histogram]
     ] = {
+        # construct full and half (so 2 histograms) for each bounding box
         bbox: {
             mask: calculate_histogram(img1, bbox, mask)
             for mask in ['full', 'half']
@@ -74,6 +69,9 @@ def compose_dataset_histograms(labels_filepath: str):
     labels_filepath: str -- path to file containing the 
                             labels for our bounding boxes
     """
+    # str is the key, it is the image name, value is a dict
+    # it contains tuple being the key, which is the bounding box
+    # its value is another dict, with str as a mask and histogram as the value
     dataset_histograms: Dict[
         str: Dict[
             Tuple[int,int,int,int], 
@@ -81,16 +79,20 @@ def compose_dataset_histograms(labels_filepath: str):
         ]
     ] = {}
 
+    # read labels file
     with open(labels_filepath) as labels:
         for line in labels.readlines():
             img_name, x, y, w, h = line.split(',')
             x, y, w, h = int(x), int(y), int(w), int(h)
 
+            # read images names off of labels.txt but
+            # skip if image is not in dataset
             img = cv.imread(f'./dataset/{img_name}.png', cv.IMREAD_GRAYSCALE)
             if img is None:
                 #print(f"{img_name}.png could not be read, check with os.path.exists()")
                 continue
 
+            # construct dataset below as per the structure defined earlier
             if not img_name in dataset_histograms:
                 dataset_histograms[img_name] = {
                     (x,y,w,h): {
@@ -109,15 +111,20 @@ def compose_dataset_histograms(labels_filepath: str):
     return dataset_histograms
 
 def compare_reference_dataset(reference_histograms, dataset_histograms):
+    # correlations shows all relevant info for each comparaison, 
+    # useful for verification/testing
     correlations_file = open('correlations.txt', 'a')
+    # shows bare amount of info, shows top 500 best results, 100 per person
     results_file = open('results.txt', 'a')
+    # similar to other structures, list[float] is the list of correlations,
+    # tuple is the bounding box of our reference people (the 5 people)
     best_results: Dict[tuple[int,int,int,int], 
-                       Dict[
-                           str, 
-                           float
-                        ]
+                       list[float]
                     ] = {}
 
+    # 5 for loops to deconstruct the reference histograms and dataset histograms
+    # structures progressively, until we can calculate correlation using the 
+    # histograms
     for ref_bbox, ref_d in reference_histograms.items():
         for ref_mask, ref_hist in ref_d.items():
             for img_name, dataset_d in dataset_histograms.items():
@@ -125,6 +132,9 @@ def compare_reference_dataset(reference_histograms, dataset_histograms):
                 for dataset_bbox, dataset_d2 in dataset_d.items():
                     for dataset_mask, dataset_hist in dataset_d2.items():
                         correlation = calculate_correlation(ref_hist, dataset_hist)
+                        # store best results progressively, using min() we can 
+                        # override the smallest value with a new bigger correlation
+                        # value
                         if not ref_bbox in best_results:
                             best_results[ref_bbox] = [correlation]
                         else:
@@ -135,19 +145,11 @@ def compare_reference_dataset(reference_histograms, dataset_histograms):
                                     best_results.get(ref_bbox).remove(min(best_results.get(ref_bbox)))
                                     best_results.get(ref_bbox).append(correlation)
 
-                            # if not ref_bbox in best_results:
-                        #     best_results[ref_bbox] = [(img_name, correlation)]
-                        # else:
-                        #     if len(best_results.get(ref_bbox)) < 100:
-                        #         best_results.get(ref_bbox).append((img_name, correlation))
-                        #     else:
-                        #         if min(best_results.get(ref_bbox)) < correlation:
-                        #             best_results.get(ref_bbox).remove(min(best_results.get(ref_bbox)))
-                        #             best_results.get(ref_bbox).append(correlation)
-
                         correlations_file.write(
                             f"Comparing ref_hist from ref_bbox/ref_mask: {ref_bbox}/{ref_mask} with ds_hist from ds_bbox/ds_mask:{dataset_bbox}/{dataset_mask} => {correlation}"  + "\n"
                         )
+
+    # write best results to results file
     for k,v in best_results.items():
         results_file.write(str(k) + ':' + str(v) + '\n')
 
