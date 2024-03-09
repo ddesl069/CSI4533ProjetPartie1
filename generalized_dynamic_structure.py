@@ -17,9 +17,9 @@ bboxes_person_img1: dict[BoundingBox, str] = {
     (463,251,112,206): 'girl in brown vest 2',
 }
 
-""" Used the calculate histogram function from opencv, calculates the histogram of the bbox
-given, it also normalizes the histogram as well """
 def calculate_histogram(img: MatLike, bbox: BoundingBox, mask_type: str) -> Histogram:
+    """Used the calculate histogram function from opencv, calculates the histogram of the bbox
+    given, it also normalizes the histogram as well"""
     mask = np.zeros(img.shape[:2], np.uint8)
     x, y, w, h = bbox
 
@@ -32,9 +32,9 @@ def calculate_histogram(img: MatLike, bbox: BoundingBox, mask_type: str) -> Hist
     normalized_hist = (hist / hist.sum()) * 100
     
     return normalized_hist
-""" calculate correlation function taken from opencv that finds the correlation of two histograms
-the higher the correlation the more accurate it is supposed to be"""
 def calculate_correlation(hist1: Histogram, hist2: Histogram) -> float:
+    """calculate correlation function taken from opencv that finds the correlation of two histograms
+    the higher the correlation the more accurate it is supposed to be"""
     return cv.compareHist(hist1, hist2, cv.HISTCMP_CORREL)
 
 def create_reference_histograms():
