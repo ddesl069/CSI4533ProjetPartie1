@@ -1,6 +1,5 @@
 import numpy as np
 import cv2 as cv
-import itertools
 from matplotlib import pyplot as plt
 from cv2.typing import MatLike
 from typing import Tuple, Dict
@@ -16,7 +15,6 @@ bboxes_person_img1: dict[BoundingBox, str] = {
     (321,269,123,189): 'girl in black vest 2',
     (463,251,112,206): 'girl in brown vest 2',
 }
-#1636738315284889400,331,73,31,39
 
 def calculate_histogram(img: MatLike, bbox: BoundingBox, mask_type: str) -> Histogram:
     mask = np.zeros(img.shape[:2], np.uint8)
@@ -111,21 +109,52 @@ def compose_dataset_histograms(labels_filepath: str):
     return dataset_histograms
 
 def compare_reference_dataset(reference_histograms, dataset_histograms):
-    output_file = open('output_file.txt', 'a')
+    correlations_file = open('correlations.txt', 'a')
+    results_file = open('results.txt', 'a')
+    best_results: Dict[tuple[int,int,int,int], 
+                       Dict[
+                           str, 
+                           float
+                        ]
+                    ] = {}
 
     for ref_bbox, ref_d in reference_histograms.items():
         for ref_mask, ref_hist in ref_d.items():
             for img_name, dataset_d in dataset_histograms.items():
-                output_file.write('==> Comparing to IMG ' + img_name + '.png\n\n')
+                correlations_file.write('==> Comparing to IMG ' + img_name + '.png\n\n')
                 for dataset_bbox, dataset_d2 in dataset_d.items():
                     for dataset_mask, dataset_hist in dataset_d2.items():
                         correlation = calculate_correlation(ref_hist, dataset_hist)
+                        if not ref_bbox in best_results:
+                            best_results[ref_bbox] = [correlation]
+                        else:
+                            if len(best_results.get(ref_bbox)) < 100:
+                                best_results.get(ref_bbox).append(correlation)
+                            else:
+                                if min(best_results.get(ref_bbox)) < correlation:
+                                    best_results.get(ref_bbox).remove(min(best_results.get(ref_bbox)))
+                                    best_results.get(ref_bbox).append(correlation)
 
-                        output_file.write(
-                            f"Comparing ref_hist from ref_bbox/ref_mask: {ref_bbox}/{ref_mask} with ds_hist from ds_bbox/ds_mask:{dataset_bbox}/{dataset_mask} => {correlation:.4f}"  + "\n"
+                            # if not ref_bbox in best_results:
+                        #     best_results[ref_bbox] = [(img_name, correlation)]
+                        # else:
+                        #     if len(best_results.get(ref_bbox)) < 100:
+                        #         best_results.get(ref_bbox).append((img_name, correlation))
+                        #     else:
+                        #         if min(best_results.get(ref_bbox)) < correlation:
+                        #             best_results.get(ref_bbox).remove(min(best_results.get(ref_bbox)))
+                        #             best_results.get(ref_bbox).append(correlation)
+
+                        correlations_file.write(
+                            f"Comparing ref_hist from ref_bbox/ref_mask: {ref_bbox}/{ref_mask} with ds_hist from ds_bbox/ds_mask:{dataset_bbox}/{dataset_mask} => {correlation}"  + "\n"
                         )
+    for k,v in best_results.items():
+        results_file.write(str(k) + ':' + str(v) + '\n')
 
-if __name__ == '__main__':
+def main():
     ref_histograms = create_reference_histograms()
     dataset_histograms = compose_dataset_histograms('labels.txt')
     compare_reference_dataset(ref_histograms, dataset_histograms)
+
+if __name__ == '__main__':
+    main()
